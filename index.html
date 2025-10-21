@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>词灵工坊 · IGCSE 0478 第3章硬件（MVP）</title>
+  <style>
+    :root{
+      --bg:#0b1220; --card:#121b2c; --card2:#17233a; --ink:#e6f0ff; --muted:#9fb2d7;
+      --acc:#6ee7ff; --good:#54f2a3; --bad:#ff6b6b; --warn:#ffd166;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background: radial-gradient(1200px 600px at 20% -10%, #11203f, #0b1220 40%), var(--bg);
+      color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+    }
+    .wrap{max-width:980px; margin:0 auto; padding:16px}
+    header{display:flex; align-items:center; gap:12px; padding:8px 0 12px}
+    .logo{width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,#48b0ff, #7ef7d4); box-shadow:0 8px 32px rgba(110,231,255,.25)}
+    h1{font-size:20px; margin:0}
+    .subtitle{font-size:12px; color:var(--muted)}
+
+    .hud{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin:10px 0 16px}
+    .stat{background:var(--card); border:1px solid #1f2c48; padding:10px 12px; border-radius:14px; display:flex; align-items:center; justify-content:space-between}
+    .stat b{font-size:18px}
+    .btn{appearance:none; border:none; background:linear-gradient(180deg,#1f355a,#182742); color:#e8f2ff; padding:10px 14px; border-radius:12px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.25); transition:.15s transform,.15s box-shadow}
+    .btn:hover{transform:translateY(-1px); box-shadow:0 10px 24px rgba(0,0,0,.35)}
+    .btn.ghost{background:transparent; border:1px solid #2a3b61}
+    .btn.good{background:linear-gradient(180deg,#1b5a3c,#143f2a)}
+    .btn.bad{background:linear-gradient(180deg,#5a2626,#452020)}
+
+    .card{background:linear-gradient(180deg,var(--card2),var(--card)); border:1px solid #1f2c48; border-radius:18px; padding:18px; box-shadow:0 16px 40px rgba(0,0,0,.25)}
+    .flex{display:flex; gap:12px; flex-wrap:wrap}
+    .row{display:flex; align-items:center; gap:12px}
+
+    .mode-tabs{display:flex; gap:6px; flex-wrap:wrap}
+    .tab{padding:8px 10px; border-radius:10px; border:1px solid #284065; font-size:12px; cursor:pointer; opacity:.85}
+    .tab.active{background:#1a2b48}
+
+    .q-title{font-size:18px; margin:8px 0 6px}
+    .prompt{font-size:16px; color:#dbe7ff}
+
+    .options{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px}
+    .opt{border:1px solid #29436b; border-radius:12px; padding:10px; cursor:pointer; background:#14213b}
+    .opt:hover{border-color:#3e66a8}
+    .opt.correct{border-color:var(--good); box-shadow:0 0 0 2px rgba(84,242,163,.25) inset}
+    .opt.wrong{border-color:var(--bad); box-shadow:0 0 0 2px rgba(255,107,107,.2) inset}
+
+    .explain{margin-top:12px; background:#0f1a31; border:1px dashed #2a4066; border-radius:12px; padding:10px; color:#cfe2ff}
+    .explain small{color:var(--muted)}
+
+    .footer-ctrl{display:flex; gap:8px; justify-content:space-between; align-items:center; margin-top:14px}
+    .pill{font-size:12px; color:#bcd3ff; border:1px solid #304d7a; border-radius:24px; padding:6px 10px}
+
+    .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+
+    .toast{position:fixed; right:16px; bottom:16px; background:#0f1a31; border:1px solid #2a4066; color:#e6f0ff; padding:10px 12px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3); opacity:0; transform:translateY(10px); transition:.25s}
+    .toast.show{opacity:1; transform:translateY(0)}
+
+    .badge{display:inline-block; padding:3px 8px; border:1px solid #2a4066; border-radius:999px; font-size:11px; color:#bcd3ff; margin-left:6px}
+    .progress{height:8px; background:#0e1730; border-radius:6px; overflow:hidden; border:1px solid #21365b}
+    .bar{height:100%; background:linear-gradient(90deg,#48b0ff,#6ee7ff); width:0%}
+
+    .small{font-size:12px; color:#muted}
+    .hidden{display:none}
+    .center{display:flex; justify-content:center; align-items:center}
+    .mt8{margin-top:8px}
+    .mt12{margin-top:12px}
+    .mt16{margin-top:16px}
+    .mt20{margin-top:20px}
+    /* === Mobile-friendly & Hall of Fame styles === */
+  .opt{min-height:48px; font-size:15px}
+  .hoflist{display:flex; flex-direction:column; gap:10px}
+  .hof-item{display:flex; align-items:center; gap:10px; background:#0f1a31; border:1px solid #2a4066; border-radius:14px; padding:10px}
+  .hof-img{width:64px; height:64px; object-fit:cover; border-radius:12px; border:1px solid #2a4066}
+  .hof-rank{width:28px; height:28px; border-radius:50%; border:1px solid #2a4066; display:flex; align-items:center; justify-content:center; font-weight:700}
+  .hof-name{font-weight:600}
+  @media (max-width:640px){
+    .wrap{padding:12px}
+    .options{grid-template-columns:1fr}
+    .hud{grid-template-columns:1fr 1fr}
+    .grid-2{grid-template-columns:1fr}
+    .btn{padding:12px 16px; font-size:16px}
+    .opt{min-height:56px; font-size:16px}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"></div>
+      <div>
+        <h1>词灵工坊 LexiForge <span class="badge">0478 · 第3章 硬件</span></h1>
+        <div class="subtitle">目标：记住中英释义（CN/EN），掌握学科概念与用法（DISC）。离线可用 · 本地保存进度。</div>
+      </div>
+    </header>
+
+    <div class="hud">
+      <div class="stat"><span>分数</span><b id="score">0</b></div>
+      <div class="stat"><span>连击</span><b id="streak">0</b></div>
+      <div class="stat"><span>剩余时间</span><b id="timer">90s</b></div>
+      <div class="stat"><span>进度</span>
+        <div style="flex:1; margin-left:10px">
+          <div class="progress"><div id="progbar" class="bar"></div></div>
+          <div class="small" id="progtext">0 / 15 本局题目</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="menu">
+      <div class="grid-2">
+        <div>
+          <h2 style="margin:0 0 6px">开始一次 90 秒挑战</h2>
+          <p class="small">包含：<b>快速匹配（CN/EN）</b> ×5、<b>概念闯关（DISC）</b> ×5、<b>Boss 整合</b> ×1；
+            错题自动进入“温故池”，稍后优先复习（演示版以分钟计时）。</p>
+          <div class="row mt12">
+            <button class="btn" id="startBtn">▶ 开始挑战</button>
+            <button class="btn ghost" id="reviewBtn">♻ 仅复习到期词</button>
+          </div>
+          <div class="row mt8">
+            <button class="btn ghost" id="resetBtn">🗑 重置本地进度</button>
+            <button class="btn ghost" id="exportBtn">⬇ 导出进度JSON</button>
+            <input class="btn ghost" type="file" id="importFile" accept="application/json" title="导入进度JSON" />
+          </div>
+          <p class="small mt8">提示：本页仅需浏览器即可运行，无需联网。进度保存在浏览器 <code>localStorage</code>。</p>
+        </div>
+        <div>
+          <h3 style="margin:0 0 6px">选择题量（演示）</h3>
+          <div class="mode-tabs" id="qtyTabs"></div>
+          <p class="small">建议 11~15 题一局。词库：IGCSE 0478 Chapter 3（硬件）核心词 12 个。</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="game" class="card hidden">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="pill" id="phasePill">—</div>
+          <div class="small mt8" id="dueInfo">温故池：—</div>
+        </div>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="pauseBtn">⏸ 暂停</button>
+          <button class="btn ghost" id="quitBtn">⏹ 结束</button>
+        </div>
+      </div>
+
+      <div class="q-title" id="qTitle">—</div>
+      <div class="prompt" id="prompt">—</div>
+      <div class="options" id="options"></div>
+      <div class="explain hidden" id="explain"></div>
+
+      <div class="footer-ctrl">
+        <div class="small">答题后会显示解析；按 <b>Enter</b> 可继续。</div>
+        <button class="btn" id="nextBtn" disabled>下一题 ▶</button>
+      </div>
+    </div>
+
+    <div id="result" class="card hidden">
+      <h2 style="margin:0 0 8px">本局结果</h2>
+      <div class="grid-2">
+        <div>
+          <p>得分：<b id="finalScore">0</b>｜最高连击：<b id="finalStreak">0</b></p>
+          <p id="summaryText" class="small"></p>
+          <button class="btn" id="againBtn">再来一局</button>
+        </div>
+        <div>
+          <h3 style="margin:0 0 6px">近期将复习（演示：以分钟为单位）</h3>
+          <ul id="upcoming" class="small" style="padding-left:18px; margin:0"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast">已保存</div>
+  </div>
+
+  <script>
+    // === 词库（IGCSE 0478 Chapter 3：Hardware） ===
+    const WORDS = [
+      {
+        id:"alu", word:"ALU", cn:"算术逻辑单元", en:"Performs arithmetic and logical operations",
+        disc:"CPU component executing ADD/AND/OR/SHIFT etc.",
+        scenario:"在执行 ADD、AND 这类运算时，处理器把操作数送到同一单元进行计算。",
+        coll:["ALU operation","status flags"], miscon:["CU","Register","Cache"]
+      },
+      {
+        id:"cu", word:"Control Unit (CU)", cn:"控制器", en:"Directs processor operations; fetches and decodes instructions",
+        disc:"Controls the movement of data and instructions within the CPU.",
+        scenario:"取指-译码-执行循环中，负责发出读/写/控制信号的部件。",
+        coll:["fetch-decode-execute","control signals"], miscon:["ALU","Register","Scheduler"]
+      },
+      {
+        id:"reg", word:"Register", cn:"寄存器", en:"Very small, very fast storage inside CPU",
+        disc:"Holds immediate values like operands, addresses, instructions.",
+        scenario:"需要在一个时钟周期内读取的临时数据放在一个极小而极快的存储位置。",
+        coll:["PC","MAR","MDR","ACC"], miscon:["Cache","RAM","Buffer"]
+      },
+      {
+        id:"cache", word:"Cache", cn:"高速缓存", en:"Small, fast memory that stores frequently used data to reduce latency",
+        disc:"Located between CPU and RAM; improves average access time.",
+        scenario:"为经常访问的数据提供更快命中路径，从而降低平均访问延迟。",
+        coll:["L1 L2 L3","cache hit"], miscon:["Buffer","Register","RAM"]
+      },
+      {
+        id:"buffer", word:"Buffer", cn:"缓冲区/缓冲", en:"Temporary storage to smooth rate differences between devices",
+        disc:"Used in I/O or networking to handle bursty data and rate mismatch.",
+        scenario:"磁盘写入速度低于输入流，临时存放数据以平滑速率。",
+        coll:["buffer overflow","double buffering"], miscon:["Cache","Register","RAM"]
+      },
+      {
+        id:"addrbus", word:"Address Bus", cn:"地址总线", en:"Carries memory addresses (usually from CPU to memory)",
+        disc:"Typically unidirectional; width defines maximum addressable space.",
+        scenario:"CPU 把要访问的位置编号送往内存或设备，线只传地址不传数据。",
+        coll:["address width","memory map"], miscon:["Data Bus","Control Bus","USB"]
+      },
+      {
+        id:"databus", word:"Data Bus", cn:"数据总线", en:"Carries data between CPU, memory and I/O (bidirectional)",
+        disc:"Width affects how much data transferred per cycle.",
+        scenario:"处理器与内存之间来回搬运字（word），线既可读也可写。",
+        coll:["bus width","bandwidth"], miscon:["Address Bus","Control Bus","Network bus"]
+      },
+      {
+        id:"ctrlbus", word:"Control Bus", cn:"控制总线", en:"Carries control signals (e.g., read/write, interrupt, clock)",
+        disc:"Coordinates timing and direction of operations.",
+        scenario:"发出读/写、确认、时钟等信号来指挥数据与地址线的配合。",
+        coll:["read/write","interrupt","clock"], miscon:["Data Bus","Address Bus","Power line"]
+      },
+      {
+        id:"ram", word:"RAM", cn:"随机存取存储器（主存）", en:"Volatile main memory for programs and data in use",
+        disc:"Loses content when power is off; working area for running programs.",
+        scenario:"计算中临时放置当前运行程序与数据的地方，断电后消失。",
+        coll:["DRAM","SRAM"], miscon:["ROM","Cache","Secondary Storage"]
+      },
+      {
+        id:"rom", word:"ROM", cn:"只读存储器", en:"Non-volatile memory storing firmware/boot code",
+        disc:"Contents persist without power; typically read-only during normal use.",
+        scenario:"设备上电后最先执行的引导程序放在不会丢失的芯片里。",
+        coll:["firmware","bootloader"], miscon:["RAM","SSD","EEPROM"]
+      },
+      {
+        id:"sec", word:"Secondary Storage", cn:"二级存储（外存）", en:"Non-volatile long-term storage like SSD/HDD",
+        disc:"Persists data across power cycles; slower than RAM but larger capacity.",
+        scenario:"文档和视频长期保存的位置，掉电仍能保留。",
+        coll:["SSD","HDD","optical"], miscon:["RAM","Cache","Register"]
+      },
+      {
+        id:"intr", word:"Interrupt", cn:"中断", en:"Signal that pauses CPU to service an event",
+        disc:"Causes CPU to save context and jump to an ISR.",
+        scenario:"键盘敲击使处理器暂时打断当前任务，转去执行服务程序。",
+        coll:["ISR","priority","mask"], miscon:["Polling","DMA","Clock"]
+      },
+    ];
+
+    // === 本地存储（简版 SRS，分钟间隔，演示用） ===
+    const LS_KEY = 'lexiforge0478_hw_srs_v1';
+    const FACE_KEYS = ['CN','EN','DISC'];
+    // 等级→下次复习延迟（分钟）
+    const INTERVALS_MIN = [1, 3, 10, 60, 180]; // 1min,3min,10min,1h,3h（演示友好）
+
+    function loadProgress(){
+      try{ return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }catch{ return {}; }
+    }
+    function saveProgress(p){ localStorage.setItem(LS_KEY, JSON.stringify(p)); }
+    let progress = loadProgress();
+
+    function ensureCardProgress(id){
+      if(!progress[id]) progress[id] = { CN:{lvl:0,due:0}, EN:{lvl:0,due:0}, DISC:{lvl:0,due:0} };
+      return progress[id];
+    }
+    function schedule(faceObj, correct){
+      // 简化：答对→+1 级并设定下次；答错→降级（>=0）并短期复习
+      if(correct){ faceObj.lvl = Math.min( faceObj.lvl + 1, INTERVALS_MIN.length ); }
+      else{ faceObj.lvl = Math.max( faceObj.lvl - 1, 0 ); }
+      const idx = Math.max(0, Math.min(faceObj.lvl, INTERVALS_MIN.length-1));
+      const mins = INTERVALS_MIN[idx];
+      faceObj.due = Date.now() + mins*60*1000; // 分钟→毫秒
+    }
+    function dueFacesNow(){
+      const now = Date.now();
+      let due = [];
+      for(const w of WORDS){
+        const cp = ensureCardProgress(w.id);
+        for(const f of FACE_KEYS){ if(cp[f].due && cp[f].due <= now) due.push({id:w.id, face:f}); }
+      }
+      return due;
+    }
+
+    // === 工具 ===
+    const $ = s=>document.querySelector(s);
+    function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    function sample(arr, n){ return shuffle(arr.slice()).slice(0,n); }
+    function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1500); }
+
+    // === 题目生成 ===
+    function genCNQ(card){
+      // 给英文词，选中文义
+      const opts = new Set([card.cn]);
+      while(opts.size<4){ opts.add(sample(WORDS.filter(w=>w.id!==card.id),1)[0].cn); }
+      const options = shuffle([...opts]).map(text=>({text, correct: text===card.cn}));
+      return {
+        phase:'快速匹配 · CN', prompt:`【英文→中文】选择 <b>${card.word}</b> 的中文释义`, explain:`<b>${card.word}</b>：${card.cn}｜<small>${card.en}</small>`, options,
+        face:'CN'
+      };
+    }
+    function genENQ(card){
+      // 给中文，选英文释义
+      const defs = new Set([card.en]);
+      while(defs.size<4){ defs.add(sample(WORDS.filter(w=>w.id!==card.id),1)[0].en); }
+      const options = shuffle([...defs]).map(text=>({text, correct: text===card.en}));
+      return {
+        phase:'快速匹配 · EN', prompt:`【中文→英文】选择 <b>${card.cn}</b> 的英文释义`, explain:`<b>${card.word}</b>：${card.en}｜<small>${card.disc}</small>`, options,
+        face:'EN'
+      };
+    }
+    function genDISCQ(card){
+      // 给场景/概念，选术语
+      let pool = WORDS.filter(w=>w.id!==card.id);
+      // 优先从误区挑干扰项
+      let distract = [];
+      for(const m of card.miscon){ const hit = WORDS.find(w=>w.word.split(' (')[0]===m || w.id===m.toLowerCase()); if(hit && hit.id!==card.id) distract.push(hit); }
+      if(distract.length<3){ distract = distract.concat( sample(pool.filter(w=>!distract.includes(w)), 3-distract.length) ); }
+      const candidates = shuffle( [card, ...sample(distract,3)] );
+      const options = candidates.map(w=>({text:`${w.word}（${w.cn}）`, correct:w.id===card.id}));
+      return {
+        phase:'概念闯关 · DISC', prompt:`【场景判断】${card.scenario} —— 以上最契合的是？`, explain:`<b>${card.word}</b>：${card.disc}｜<small>${card.en}</small>`, options,
+        face:'DISC'
+      };
+    }
+    function genBOSSQ(card){
+      const defs = new Set([card.en]);
+      while(defs.size<4){ defs.add(sample(WORDS.filter(w=>w.id!==card.id),1)[0].en); }
+      const defOptions = shuffle([...defs]).map(text=>({text, correct: text===card.en}));
+      return {
+        phase:'BOSS · 整合', prompt:`【整合】读场景并选择最贴切的术语，然后选择其英文定义。<br><br><i>${card.scenario}</i>`,
+        explain:`<b>${card.word}</b>：${card.cn}｜${card.en}｜<small>${card.disc}</small>`,
+        options:[
+          { text:`${card.word}（${card.cn}）`, correct:true, bossSub:defOptions },
+          ...sample(WORDS.filter(w=>w.id!==card.id),3).map(w=>({ text:`${w.word}（${w.cn}）`, correct:false }))
+        ], boss:true, face:'DISC'
+      };
+    }
+
+    // === 局管理 ===
+    let game = null; // {queue: [q...], idx, score, streak, timeLeft, running}
+
+    function buildQueue(total=15, reviewOnly=false){
+      const due = dueFacesNow();
+      const dueInfoTxt = due.length ? `到期 ${due.length} 项（CN/EN/DISC 面向）` : '暂无到期项';
+      $('#dueInfo').textContent = `温故池：${dueInfoTxt}`;
+
+      const baseCards = reviewOnly && due.length ? [...new Set(due.map(x=>x.id))].map(id=>WORDS.find(w=>w.id===id)) : sample(WORDS, Math.min(5, WORDS.length));
+      let queue = [];
+
+      // A. 快速匹配：对每张卡做 CN 或 EN（随机二选一）
+      for(const c of baseCards){ queue.push( Math.random()<0.5 ? genCNQ(c) : genENQ(c) ); }
+      // B. 概念闯关：每张卡出一道 DISC
+      for(const c of baseCards){ queue.push( genDISCQ(c) ); }
+      // C. BOSS：在这批中随机 1 张
+      queue.push( genBOSSQ(sample(baseCards,1)[0]) );
+
+      // 如果需要更多题，补充随机 CN/EN/DISC 混合
+      while(queue.length < total){
+        const c = sample(WORDS,1)[0];
+        const t = Math.random();
+        queue.push( t<.34 ? genCNQ(c) : t<.67 ? genENQ(c) : genDISCQ(c) );
+      }
+      // 截断到 total
+      queue = queue.slice(0,total);
+      return queue;
+    }
+
+    function startGame({total=15, reviewOnly=false}={}){
+      $('#menu').classList.add('hidden');
+      $('#result').classList.add('hidden');
+      $('#game').classList.remove('hidden');
+      game = {
+        queue: buildQueue(total, reviewOnly), idx:0, score:0, streak:0, timeLeft:90, running:true
+      };
+      updateHUD();
+      renderQ();
+      tick();
+    }
+
+    function quitGame(){
+      game.running=false;
+      $('#game').classList.add('hidden');
+      $('#menu').classList.remove('hidden');
+    }
+
+    function updateHUD(){
+      $('#score').textContent = game.score;
+      $('#streak').textContent = game.streak;
+      $('#timer').textContent = game.timeLeft+ 's';
+      const total = game.queue.length; const done = game.idx; const pct = Math.floor((done/total)*100);
+      $('#progbar').style.width = pct+'%';
+      $('#progtext').textContent = `${done} / ${total} 本局题目`;
+    }
+
+    function renderQ(){
+      const q = game.queue[game.idx];
+      if(!q){ return endGame(); }
+      $('#phasePill').textContent = q.phase;
+      $('#qTitle').innerHTML = `第 ${game.idx+1} 题`;
+      $('#prompt').innerHTML = q.prompt;
+      const optBox = $('#options'); optBox.innerHTML='';
+      $('#explain').classList.add('hidden'); $('#explain').innerHTML='';
+      $('#nextBtn').disabled = true;
+
+      // 选项渲染
+      q.options.forEach((o, i)=>{
+        const div = document.createElement('div');
+        div.className='opt'; div.tabIndex=0; div.innerHTML = o.text;
+        div.addEventListener('click', ()=>handlePick(q, div, o));
+        div.addEventListener('keyup', (e)=>{ if(e.key==='Enter') handlePick(q, div, o); });
+        optBox.appendChild(div);
+      });
+    }
+
+    function handlePick(q, el, opt){
+      if($('#nextBtn').disabled===false) return; // 已答
+      const nodes = [...document.querySelectorAll('.opt')];
+      let correct = !!opt.correct;
+      nodes.forEach(n=>{
+        const text = n.innerHTML;
+        const isCorrect = q.boss ? (text.includes(q.options.find(x=>x.correct).text)) : q.options.find(x=>x.text===text)?.correct;
+        n.classList.add(isCorrect? 'correct':'wrong');
+      });
+
+      if(q.boss && correct){
+        // 二段：再选定义
+        const subBox = document.createElement('div');
+        subBox.className='options mt12';
+        q.options.find(x=>x.correct).bossSub.forEach(sub=>{
+          const d = document.createElement('div');
+          d.className='opt'; d.tabIndex=0; d.innerHTML = sub.text;
+          d.addEventListener('click', ()=>{
+            const all=[...subBox.children]; all.forEach(n=>n.classList.add(n.innerHTML===sub.text && sub.correct ? 'correct':'wrong'));
+            finalizeAnswer(q, correct && sub.correct);
+          });
+          d.addEventListener('keyup',(e)=>{ if(e.key==='Enter'){ d.click(); }});
+          subBox.appendChild(d);
+        });
+        $('#options').appendChild(subBox);
+        $('#explain').classList.remove('hidden');
+        $('#explain').innerHTML = q.explain + '<div class="small mt8">已选对术语，请选择对应英文定义。</div>';
+        return;
+      }
+
+      finalizeAnswer(q, correct);
+    }
+
+    function finalizeAnswer(q, correct){
+      $('#explain').classList.remove('hidden');
+      $('#explain').innerHTML = q.explain + (correct? ` <span style="color:var(--good)">✓ 正确</span>` : ` <span style="color:var(--bad)">✗ 再想想（已记录复习）</span>`);
+      $('#nextBtn').disabled = false;
+
+      // 计分与连击
+      if(correct){ game.score += 10 + Math.min(game.streak, 10); game.streak += 1; }
+      else{ game.streak = 0; }
+      updateHUD();
+
+      // SRS：更新对应面向
+      const card = WORDS.find(w=> q.prompt.includes(w.word) || q.explain.includes(w.word));
+      if(card){
+        const cp = ensureCardProgress(card.id);
+        schedule(cp[q.face], correct);
+        saveProgress(progress);
+      }
+    }
+
+    function nextQ(){
+      game.idx += 1;
+      updateHUD();
+      if(game.idx >= game.queue.length){ endGame(); }
+      else{ renderQ(); }
+    }
+
+    function endGame(){
+      game.running=false;
+      $('#game').classList.add('hidden');
+      $('#result').classList.remove('hidden');
+      $('#finalScore').textContent = game.score;
+      $('#finalStreak').textContent = game.streak;
+      // 复习计划列表
+      const items=[]; const now=Date.now();
+      for(const w of WORDS){ const cp = ensureCardProgress(w.id); for(const f of FACE_KEYS){ if(cp[f].due>now) items.push({w, f, inMin: Math.round((cp[f].due-now)/60000)}); }}
+      items.sort((a,b)=>a.inMin-b.inMin);
+      const ul=$('#upcoming'); ul.innerHTML=''; items.slice(0,10).forEach(it=>{
+        const li=document.createElement('li'); li.textContent=`${it.w.word} · ${it.f} 面向：${it.inMin} 分钟后`;
+        ul.appendChild(li);
+      });
+      const mastered = WORDS.filter(w=>{
+        const cp=ensureCardProgress(w.id); return FACE_KEYS.every(f=>cp[f].lvl>=4);
+      }).length;
+      $('#summaryText').textContent = `已精通词（所有面向≥4）：${mastered} / ${WORDS.length}`;
+    }
+
+    // === 计时器 ===
+    let timerId=null;
+    function tick(){
+      clearInterval(timerId);
+      timerId = setInterval(()=>{
+        if(!game?.running) return clearInterval(timerId);
+        if(game.timeLeft<=0){ clearInterval(timerId); return endGame(); }
+        game.timeLeft -= 1; $('#timer').textContent = game.timeLeft+'s';
+      },1000);
+    }
+
+    // === 交互 ===
+    $('#startBtn').addEventListener('click', ()=> startGame({ total: currentQty, reviewOnly:false }));
+    $('#reviewBtn').addEventListener('click', ()=> startGame({ total: currentQty, reviewOnly:true }));
+    $('#resetBtn').addEventListener('click', ()=>{ if(confirm('确定清空所有本地进度？')){ localStorage.removeItem(LS_KEY); progress={}; toast('已重置'); }});
+    $('#exportBtn').addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(progress,null,2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'lexiforge_progress.json'; a.click();
+    });
+    $('#importFile').addEventListener('change', (e)=>{
+      const file = e.target.files?.[0]; if(!file) return;
+      const fr = new FileReader(); fr.onload = ()=>{ try{ progress = JSON.parse(fr.result); saveProgress(progress); toast('已导入进度'); }catch{ alert('导入失败：JSON 格式错误'); } };
+      fr.readAsText(file);
+    });
+
+    $('#pauseBtn').addEventListener('click', ()=>{ game.running=!game.running; $('#pauseBtn').textContent = game.running? '⏸ 暂停':'▶ 继续'; if(game.running) tick(); });
+    $('#quitBtn').addEventListener('click', quitGame);
+    $('#againBtn').addEventListener('click', ()=>{ $('#menu').classList.remove('hidden'); $('#result').classList.add('hidden'); });
+    $('#nextBtn').addEventListener('click', nextQ);
+    window.addEventListener('keyup', (e)=>{ if(e.key==='Enter' && !$('#nextBtn').disabled) nextQ(); });
+
+    // === 题量切换 ===
+    const qtyOptions=[11,13,15,17];
+    let currentQty=15;
+    const qtyTabs=$('#qtyTabs');
+    function renderQtyTabs(){ qtyTabs.innerHTML=''; qtyOptions.forEach(q=>{
+      const b=document.createElement('button'); b.className='tab'+(q===currentQty?' active':''); b.textContent=q+' 题/局';
+      b.addEventListener('click', ()=>{ currentQty=q; renderQtyTabs(); }); qtyTabs.appendChild(b);
+    }); }
+    renderQtyTabs();
+
+    // === 玩家历史与名人堂（本地存储） ===
+  const LS_PLAYERS = 'lexiforge0478_hw_players_v1';
+  const LS_HOF = 'lexiforge0478_hw_hof_v1';
+
+  function loadArr(k){ try{ return JSON.parse(localStorage.getItem(k)) || []; }catch{ return []; } }
+  function saveArr(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+  function rankPlayers(arr){ return arr.slice().sort((a,b)=> b.score - a.score || a.tms - b.tms); }
+  function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function addToPlayers(name, score){ const arr=loadArr(LS_PLAYERS); const rec={name, score, tms:Date.now()}; arr.push(rec); saveArr(LS_PLAYERS, arr); return rec; }
+  function hofQualified(score){ const hof = rankPlayers(loadArr(LS_HOF)); if(hof.length<10) return true; const last = hof[hof.length-1]; return score>last.score || (score===last.score && Date.now()<last.tms); }
+  function submitToHoF(name, score, skill, img){ const hof = loadArr(LS_HOF); hof.push({name, score, skill, img, tms:Date.now()}); const ranked = rankPlayers(hof).slice(0,10); saveArr(LS_HOF, ranked); return ranked; }
+
+  async function compressImage(file, maxW=512, maxH=512, mime='image/jpeg', quality=.85){
+    return new Promise((resolve,reject)=>{
+      try{
+        if(file.type && file.type.includes('gif')){
+          const fr=new FileReader(); fr.onload=()=>resolve({dataUrl:fr.result, note:'GIF 保留原图'}); fr.onerror=reject; fr.readAsDataURL(file); return;
+        }
+        const fr=new FileReader(); fr.onload=()=>{ const img=new Image(); img.onload=()=>{
+          let w=img.width, h=img.height; const r=Math.min(maxW/w, maxH/h, 1); w=Math.round(w*r); h=Math.round(h*r);
+          const c=document.createElement('canvas'); c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+          let dataUrl;
+          try{ dataUrl=c.toDataURL(mime, quality); }catch{ dataUrl=c.toDataURL(); }
+          resolve({dataUrl});
+        }; img.src=fr.result; };
+        fr.onerror=reject; fr.readAsDataURL(file);
+      }catch(e){ reject(e); }
+    });
+  }
+
+  function ensureHoFUI(){
+    if(document.querySelector('#hof')) return;
+    const hofCard=document.createElement('div');
+    hofCard.id='hof'; hofCard.className='card hidden';
+    hofCard.innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 style="margin:0">🏆 名人堂 Hall of Fame</h2>
+        <button class="btn ghost" id="hofBackBtn">← 返回</button>
+      </div>
+      <div class="small" style="margin:6px 0 12px">展示历史前10名：分数｜名字｜技能名｜图片</div>
+      <div id="hofList" class="hoflist"></div>
+    `;
+    document.querySelector('.wrap').appendChild(hofCard);
+    hofCard.querySelector('#hofBackBtn').addEventListener('click', ()=>{
+      document.querySelector('#hof').classList.add('hidden');
+      document.querySelector('#menu').classList.remove('hidden');
+    });
+  }
+  function renderHoF(){ const list=document.querySelector('#hofList'); if(!list) return; const hof=rankPlayers(loadArr(LS_HOF)).slice(0,10); list.innerHTML=''; hof.forEach((r,i)=>{
+    const div=document.createElement('div'); div.className='hof-item';
+    div.innerHTML = `
+      <div class="hof-rank">${i+1}</div>
+      <img class="hof-img" src="${r.img||''}" alt="img"/>
+      <div class="hof-meta">
+        <div class="hof-name">${escapeHtml(r.name)}</div>
+        <div class="small">分数：${r.score}｜技能：${escapeHtml(r.skill||'—')}</div>
+      </div>`;
+    list.appendChild(div);
+  }); }
+  function openHoF(){ ensureHoFUI(); ['#menu','#game','#result'].forEach(sel=>{ const el=document.querySelector(sel); if(el) el.classList.add('hidden');}); document.querySelector('#hof').classList.remove('hidden'); renderHoF(); }
+
+  function buildResultExtras(){
+    if(document.querySelector('#nameRow')) return;
+    const res=document.querySelector('#result');
+    const extra=document.createElement('div'); extra.id='resultExtras';
+    extra.innerHTML = `
+      <hr style="border:none;border-top:1px dashed #2a4066;margin:12px 0">
+      <div id="nameRow">
+        <label class="small">请输入名字（必填，可用任何文字与表情）：</label>
+        <div class="row mt8">
+          <input id="nameInput" class="text" placeholder="你的名字 ✨" maxlength="40" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #2a4066; background:#0f1a31; color:#e6f0ff" />
+          <button class="btn" id="saveNameBtn">保存成绩</button>
+        </div>
+      </div>
+      <div id="afterSave" class="hidden mt12">
+        <div>本局玩家：<b id="afterSaveName"></b>｜分数：<b id="afterSaveScore"></b></div>
+      </div>
+      <div id="hofTop" class="mt16">
+        <div class="small">当前名人堂第一名：</div>
+        <div id="hofTop1" class="mt8 small"></div>
+      </div>
+      <div id="hofUpload" class="hidden mt16">
+        <h3 style="margin:0 0 6px">🎉 恭喜进入前10！完善个人展示：</h3>
+        <div class="small">上传一张图片（jpg/png/webp/gif；过大将自动压缩）并填写一个技能名：</div>
+        <div class="row mt8" style="flex-wrap:wrap; gap:10px">
+          <input type="file" id="hofImgInput" accept="image/*,.gif" class="btn ghost" />
+          <img id="hofPreview" alt="预览" style="width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid #2a4066;display:none" />
+        </div>
+        <div class="row mt8">
+          <input id="skillInput" class="text" placeholder="技能名（例如：Cache Master）" maxlength="32" style="flex:1; padding:10px 12px; border-radius:12px; border:1px solid #2a4066; background:#0f1a31; color:#e6f2ff" />
+          <button class="btn good" id="hofSubmitBtn">提交到名人堂</button>
+        </div>
+      </div>
+      <div class="row mt16">
+        <button class="btn ghost" id="hofBtn2">🏆 查看名人堂</button>
+      </div>
+    `;
+    res.appendChild(extra);
+
+    document.querySelector('#hofBtn2').addEventListener('click', openHoF);
+    document.querySelector('#hofImgInput').addEventListener('change', async (e)=>{
+      const f=e.target.files?.[0]; if(!f) return;
+      try{ const {dataUrl} = await compressImage(f, 512, 512, 'image/jpeg', .85); const img=document.querySelector('#hofPreview'); img.src=dataUrl; img.style.display='block'; img.dataset.src=dataUrl; }catch{ alert('图片处理失败'); }
+    });
+    document.querySelector('#hofSubmitBtn').addEventListener('click', ()=>{
+      const rec = game?.currentPlayer; if(!rec){ return alert('请先保存名字'); }
+      const skill = document.querySelector('#skillInput').value.trim(); if(!skill){ return alert('请输入技能名'); }
+      const img = document.querySelector('#hofPreview').dataset.src || '';
+      submitToHoF(rec.name, rec.score, skill, img);
+      toast('已加入名人堂');
+      document.querySelector('#hofUpload').classList.add('hidden');
+      renderHoF(); refreshTop1InResult();
+    });
+    document.querySelector('#saveNameBtn').addEventListener('click', ()=>{
+      const name = document.querySelector('#nameInput').value.trim(); if(!name){ alert('请输入名字'); return; }
+      const rec = addToPlayers(name, game.score); game.currentPlayer = rec;
+      document.querySelector('#afterSaveName').textContent = rec.name;
+      document.querySelector('#afterSaveScore').textContent = rec.score;
+      document.querySelector('#afterSave').classList.remove('hidden');
+      document.querySelector('#nameRow').classList.add('hidden');
+      document.querySelector('#againBtn').disabled = false;
+      if(hofQualified(rec.score)){ document.querySelector('#hofUpload').classList.remove('hidden'); } else { document.querySelector('#hofUpload').classList.add('hidden'); }
+      refreshTop1InResult();
+    });
+  }
+
+  function refreshTop1InResult(){
+    const hof=rankPlayers(loadArr(LS_HOF)); const top=hof[0]; const box=document.querySelector('#hofTop1'); if(!box) return;
+    if(top){ box.innerHTML = `<div class="row" style="gap:10px"><img src="${top.img||''}" alt="top" style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid #2a4066"/><div><div><b>${escapeHtml(top.name)}</b></div><div class="small">分数：${top.score}｜技能：${escapeHtml(top.skill||'—')}</div></div></div>`; }
+    else{ box.innerHTML = '<div class="small">暂无记录</div>'; }
+  }
+
+  // 在菜单添加“名人堂”入口
+  (function(){
+    const menu=document.querySelector('#menu'); if(!menu) return; const rows=menu.querySelectorAll('.row'); const last=rows[rows.length-1]; if(!last) return; const b=document.createElement('button'); b.className='btn ghost'; b.id='hofBtn1'; b.textContent='🏆 名人堂'; b.addEventListener('click', openHoF); last.appendChild(b);
+  })();
+
+  // 钩住 endGame，添加保存名字与名人堂逻辑
+  const _endGame=endGame; endGame=function(){
+    _endGame();
+    buildResultExtras();
+    const again=document.querySelector('#againBtn'); if(again){ again.disabled = true; }
+    const nr=document.querySelector('#nameRow'); if(nr) nr.classList.remove('hidden');
+    const asv=document.querySelector('#afterSave'); if(asv) asv.classList.add('hidden');
+    const hup=document.querySelector('#hofUpload'); if(hup) hup.classList.add('hidden');
+    refreshTop1InResult();
+  };
+  </script>
+</body>
+</html>
